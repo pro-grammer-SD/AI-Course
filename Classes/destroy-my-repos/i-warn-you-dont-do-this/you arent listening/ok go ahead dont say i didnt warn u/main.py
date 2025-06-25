@@ -1,7 +1,11 @@
 import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 username = "pro-grammer-sd"
-token = "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"
+token = os.environ["KEY"]
 
 headers = {
     "Authorization": f"token {token}",
@@ -23,3 +27,5 @@ for repo in repos:
             print(f"✅ Made '{name}' private")
         else:
             print(f"❌ Failed on '{name}': {patch_response.status_code}")
+
+print("Everthing is already OK! 👌")
