@@ -1,35 +1,52 @@
 import os
-import subprocess
 import requests
-from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 username = "pro-grammer-sd"
-token = os.environ["KEY"]
+token = os.getenv("KEY")
+
+if not token:
+    print("❌ No token found in environment variable 'KEY'")
+    exit(1)
 
 headers = {
     "Authorization": f"token {token}",
     "Accept": "application/vnd.github.v3+json"
 }
 
-base_dir = Path("Python-Foolproof-Course")
-base_dir.mkdir(exist_ok=True)
+repos = []
+page = 1
 
-repos_url = f"https://api.github.com/users/{username}/repos?per_page=100"
-repos = requests.get(repos_url, headers=headers).json()
+# Fetch ALL pages of repos
+while True:
+    url = f"https://api.github.com/user/repos?per_page=100&page={page}&type=owner"
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print("❌ GitHub API Error:", response.json())
+        exit(1)
 
+    data = response.json()
+    if not data:
+        break
+
+    repos.extend(data)
+    page += 1
+
+# Delete repos that start with "Class"
 for repo in repos:
-    name = repo["name"]
+    name = repo.get("name", "")
     if name.startswith("Class"):
-        clone_url = repo["clone_url"].replace("https://", f"https://{username}:{token}@")
-        target_dir = base_dir / name
-        print(f"📥 Cloning {name}...")
-        subprocess.run(["git", "clone", clone_url, str(target_dir)])
+        delete_url = f"https://api.github.com/repos/{username}/{name}"
+        del_response = requests.delete(delete_url, headers=headers)
+        if del_response.status_code == 204:
+            print(f"🧨 Deleted repo: {name}")
+        elif del_response.status_code == 403:
+            print(f"🚫 Forbidden deleting {name} (check delete_repo scope or admin rights)")
+        elif del_response.status_code == 404:
+            print(f"❓ Not found or already deleted: {name}")
+        else:
+            print(f"❌ Failed to delete {name}: {del_response.status_code} – {del_response.json()}")
 
-# Init new repo
-os.chdir(base_dir)
-subprocess.run(["git", "init"])
-subprocess.run(["git", "remote", "add", "origin", f"https://github.com/{username}/Python-Foolproof-Course.git"])
-subprocess.run(["git", "add", "."])
-subprocess.run(["git", "commit", "-m", "Combined all Class repos"])
-subprocess.run(["git", "branch", "-M", "main"])
-subprocess.run(["git", "push", "-u", "origin", "main"])
+print("✅ All matching 'Class*' repos processed.")
