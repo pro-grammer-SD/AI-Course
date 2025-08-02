@@ -1,0 +1,6 @@
+{'category': 'Science &amp; Nature',
+ 'correct_answer': 'H20',
+ 'difficulty': 'easy',
+ 'incorrect_answers': ['C12H6O2', 'CO2', 'H'],
+ 'question': 'What is the chemical makeup of water?',
+ 'type': 'multiple'}
