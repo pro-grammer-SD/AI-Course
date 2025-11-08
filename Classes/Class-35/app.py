@@ -1,25 +1,23 @@
 import streamlit as st
 from google import genai
 from PIL import Image
-from transformers import pipeline
 import io
+from pysentimiento import create_analyzer
 
-st.title("Safe AI Image Generator (Gemini)")
+st.title("Smart Safe AI Image Generator (Gemini)")
 
 api_key = st.text_input("Enter your Google API key:", type="password")
 prompt = st.text_area("Enter your image prompt:")
 
-moderator = pipeline("text-classification", model="facebook/roberta-hate-speech-dynabench-r4-target")
+analyzer = create_analyzer(task="toxicity", lang="en")
 
 if st.button("Generate Image"):
     if not api_key or not prompt:
         st.error("Please enter both API key and prompt.")
     else:
-        analysis = moderator(prompt)[0]
-        label = analysis["label"].lower()
-        score = analysis["score"]
-        if ("hate" in label or "offensive" in label or score > 0.6):
-            st.warning("⚠️ Unsafe or NSFW-like prompt detected. Please use appropriate language.")
+        analysis = analyzer.predict(prompt)
+        if analysis.output == "toxic" or analysis.probas["toxic"] > 0.5:
+            st.warning("⚠️ NSFW or toxic prompt detected. Please use safe language.")
         else:
             try:
                 client = genai.Client(api_key=api_key)
