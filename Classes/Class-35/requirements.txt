@@ -1,6 +1,5 @@
 streamlit
 google-generativeai
 Pillow
-pysentimiento
-torch
 transformers
+torch
